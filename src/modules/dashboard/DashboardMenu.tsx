@@ -1,12 +1,33 @@
-import { useAuth } from '../auth/hooks';
-import { Link } from 'react-router-dom';
+import { useAuth } from '../auth/hooks'
+import { Link, useNavigate } from 'react-router-dom'
+import { supabase } from "../../utils/supabaseClient"
 
 export const DashboardMenu = () => {
-  const { user } = useAuth();
+  const { user } = useAuth()
+  const navigate = useNavigate()
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut()
+      navigate('/login')
+    } catch (error) {
+      console.error('Error al cerrar sesión', error)
+    }
+  }
 
   return (
     <div className="p-4">
-      <h2 className="text-xl mb-4">Bienvenido, {user?.email}</h2>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl">Bienvenido, {user?.email}</h2>
+
+        <button
+          onClick={handleLogout}
+          className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+        >
+          Cerrar sesión Actual
+        </button>
+      </div>
+
       {user?.role === 'admin' ? (
         <ul className="space-y-2">
           <li>
@@ -55,5 +76,5 @@ export const DashboardMenu = () => {
         </ul>
       )}
     </div>
-  );
-};
+  )
+}
