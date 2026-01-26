@@ -1,9 +1,9 @@
 import { useState } from "react";
+import { supabase } from "../../utils/supabaseClient";
 
 export const RegisterEmployee = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("empleado");
   const [message, setMessage] = useState("");
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -11,29 +11,42 @@ export const RegisterEmployee = () => {
     setMessage("");
 
     try {
-      const res = await fetch(
-  "https://xgoiertpompdgxubhuwf.supabase.co/functions/v1/clever-action",
-  {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ email, password, role }),
-  }
-);
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
 
+      if (!token) {
+        throw new Error("Sesión no válida");
+      }
+
+      const res = await fetch(
+        "https://xgoiertpompdgxubhuwf.supabase.co/functions/v1/clever-action",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            email,
+            password,
+            role: "empleado",
+          }),
+        }
+      );
 
       const data = await res.json();
 
-      if (!res.ok) throw new Error(data.error || "Error creando empleado");
+      if (!res.ok) {
+        throw new Error(data.error || "Error creando empleado");
+      }
 
-      setMessage(`Empleado registrado correctamente: ${email}`);
+      setMessage(`Empleado creado correctamente: ${email}`);
       setEmail("");
       setPassword("");
-      setRole("empleado");
-    } catch (err: unknown) {
-      if (err instanceof Error) setMessage(`Error: ${err.message}`);
-      else setMessage("Error desconocido");
+    } catch (err) {
+      setMessage(
+        err instanceof Error ? `Error: ${err.message}` : "Error desconocido"
+      );
     }
   };
 
@@ -58,14 +71,6 @@ export const RegisterEmployee = () => {
           className="w-full p-2 mb-3 border rounded"
           required
         />
-        <select
-          value={role}
-          onChange={(e) => setRole(e.target.value)}
-          className="w-full p-2 mb-3 border rounded"
-        >
-          <option value="empleado">Empleado</option>
-          <option value="admin">Administrador</option>
-        </select>
         <button
           type="submit"
           className="w-full bg-green-500 text-white p-2 rounded hover:bg-green-600"

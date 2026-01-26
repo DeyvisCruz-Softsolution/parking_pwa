@@ -33,9 +33,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const login = async (email: string, password: string) => {
-    const { data } = await supabase.auth.signInWithPassword({ email, password });
-    if (data.user) await fetchUserRole(data.user.id);
-  };
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (error || !data.user) {
+    throw new Error("Credenciales incorrectas");
+  }
+
+  await fetchUserRole(data.user.id);
+};
 
   const logout = async () => {
     await supabase.auth.signOut();
