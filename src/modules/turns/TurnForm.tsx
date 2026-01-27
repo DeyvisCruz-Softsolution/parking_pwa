@@ -7,18 +7,11 @@ export const TurnForm = () => {
   const [end, setEnd] = useState('')
 
   const saveTurn = async () => {
-    // 1️⃣ obtener usuario autenticado
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser()
-
-    if (userError || !user) {
-      alert('Usuario no autenticado')
+    if (!employeeId || !start || !end) {
+      alert('Completa todos los campos')
       return
     }
 
-    // 2️⃣ insertar turno con created_by
     const { data, error } = await supabase
       .from('turns')
       .insert({
@@ -26,7 +19,6 @@ export const TurnForm = () => {
         start_time: start,
         end_time: end,
         status: 'pendiente',
-        created_by: user.id, // 🔑 CLAVE
       })
       .select()
       .single()
