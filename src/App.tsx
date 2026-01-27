@@ -7,8 +7,8 @@ import { RegisterEmployee } from "./modules/auth/RegisterEmployee";
 
 /* TURNOS */
 import { TurnProvider } from "./modules/turns/TurnProvider";
-import TurnList from "./modules/turns/TurnList";
 import ActivateTurn from "./modules/turns/ActivateTurn";
+import TurnsPage from "./modules/turns/TurnsPage";
 
 function App() {
   return (
@@ -42,12 +42,12 @@ function App() {
             {/* LISTA DE TURNOS (admin ve todos, empleado solo los suyos) */}
             <Route
               path="/turns"
-              element={
-                <PrivateRoute roles={["admin", "empleado"]}>
-                  <TurnList />
-                </PrivateRoute>
-              }
-            />
+  element={
+    <PrivateRoute roles={['admin']}>
+      <TurnsPage />
+    </PrivateRoute>
+  }
+/>
 
             {/* ACTIVAR TURNO (solo empleado) */}
             <Route
