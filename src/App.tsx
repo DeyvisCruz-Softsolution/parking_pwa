@@ -10,6 +10,7 @@ import { TurnProvider } from "./modules/turns/TurnProvider";
 import ActivateTurn from "./modules/turns/ActivateTurn";
 import TurnsPage from "./modules/turns/TurnsPage";
 import MyTurn from "./modules/turns/MyTurn";
+import { EmployeeRoute } from "./routes/EmployeeRoute";
 
 function App() {
   return (
@@ -39,6 +40,15 @@ function App() {
                 </PrivateRoute>
               }
             />
+{/* ACTIVAR TURNO (solo empleado) */}
+<Route
+  path="/activate-turn"
+  element={
+    <EmployeeRoute>
+      <ActivateTurn />
+    </EmployeeRoute>
+  }
+/>
 
             {/* LISTA DE TURNOS (solo admin) */}
             <Route
