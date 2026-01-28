@@ -29,20 +29,23 @@ export const DashboardMenu = () => {
       </div>
 
       {user?.role === 'admin' ? (
-        <ul className="space-y-2">
-          <li>
-            <Link to="/register-employee">Registrar Empleado</Link>
-          </li>
-          <li>
-            <Link to="/turns">Gestionar Turnos</Link>
-          </li>
-          <li>
-            <Link to="/rates">Configurar Tarifas</Link>
-          </li>
-          <li>
-            <Link to="/inventory">Inventario / Productos</Link>
-          </li>
-        </ul>
+  <ul className="space-y-2">
+    <li>
+      <Link to="/dashboard-admin">Dashboard</Link>
+    </li>
+    <li>
+      <Link to="/register-employee">Registrar Empleado</Link>
+    </li>
+    <li>
+      <Link to="/turns">Gestionar Turnos</Link>
+    </li>
+    <li>
+      <Link to="/rates">Configurar Tarifas</Link>
+    </li>
+    <li>
+      <Link to="/inventory">Inventario / Productos</Link>
+    </li>
+  </ul>
       ) : (
         <ul className="space-y-2">
           <li>

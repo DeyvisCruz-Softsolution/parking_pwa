@@ -9,9 +9,10 @@ export interface TurnContextProps {
     minutes: number
   ) => Promise<{ success: boolean; new_end_time?: string; error?: string }>
   reloadActiveTurn: () => Promise<void>
+
+  // 🔹 NUEVO: función para recargar todos los turnos
+  refreshTurns: () => Promise<void>
 }
-
-
 
 import { createContext } from "react"
 

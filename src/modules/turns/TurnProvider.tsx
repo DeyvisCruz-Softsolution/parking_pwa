@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { supabase } from "../../utils/supabaseClient"
 import type { Turn } from "../../types/Turn"
 import { TurnContext } from "./TurnContext"
@@ -67,32 +67,41 @@ export const TurnProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }
 
-  useEffect(() => {
+  // 🔄 Función para recargar todos los turnos
+  const refreshTurns = useCallback(async () => {
     if (!user) return
-    const loadData = async () => {
-      const { data: active } = await supabase
-        .from("turns")
-        .select("*")
-        .eq("employee_id", user.id)
-        .eq("status", "activo")
-        .maybeSingle()
 
-      setActiveTurn(active ?? null)
+    const query = supabase.from("turns").select("*").order("start_time")
+    const { data: list } =
+      user.role === "admin" ? await query : await query.eq("employee_id", user.id)
+    setTurns(list ?? [])
 
-      const query = supabase.from("turns").select("*").order("start_time")
-      const { data: list } =
-        user.role === "admin" ? await query : await query.eq("employee_id", user.id)
-      setTurns(list ?? [])
-    }
-    loadData()
+    const { data: active } = await supabase
+      .from("turns")
+      .select("*")
+      .eq("employee_id", user.id)
+      .eq("status", "activo")
+      .maybeSingle()
+    setActiveTurn(active ?? null)
   }, [user])
+
+  // Cargar turnos al montar o cuando cambie el usuario
+ useEffect(() => {
+  if (!user) return
+  const loadTurns = async () => {
+    await refreshTurns()
+  }
+  loadTurns()
+}, [user, refreshTurns])
+
 
   const contextValue: TurnContextProps = {
     activeTurn,
     turns,
     activateTurn,
     extendTurn,
-    reloadActiveTurn: async () => {},
+    reloadActiveTurn: refreshTurns, // mantiene compatibilidad
+    refreshTurns, // ahora sí existe en el context según TurnContextProps
   }
 
   return <TurnContext.Provider value={contextValue}>{children}</TurnContext.Provider>

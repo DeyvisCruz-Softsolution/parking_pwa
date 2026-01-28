@@ -11,6 +11,7 @@ import ActivateTurn from "./modules/turns/ActivateTurn";
 import TurnsPage from "./modules/turns/TurnsPage";
 import MyTurn from "./modules/turns/MyTurn";
 import { EmployeeRoute } from "./routes/EmployeeRoute";
+import DashboardAdmin from "./modules/dashboard/DashboardAdmin";
 
 function App() {
   return (
@@ -30,7 +31,14 @@ function App() {
                 </PrivateRoute>
               }
             />
-
+<Route
+  path="/dashboard-admin"
+  element={
+    <PrivateRoute roles={["admin"]}>
+      <DashboardAdmin />
+    </PrivateRoute>
+  }
+/>
             {/* Registrar empleado (solo admin) */}
             <Route
               path="/register-employee"
