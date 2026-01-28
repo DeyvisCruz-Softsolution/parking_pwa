@@ -1,84 +1,99 @@
-import { useEffect, useState } from 'react';
-import { supabase } from '../../utils/supabaseClient';
-import type { Turn } from '../../types/Turn';
-import { TurnContext } from './TurnContext';
-import { useAuth } from '../auth/hooks';
+import { useEffect, useState } from "react"
+import { supabase } from "../../utils/supabaseClient"
+import type { Turn } from "../../types/Turn"
+import { TurnContext } from "./TurnContext"
+import type { TurnContextProps } from "./TurnContext"
+import { useAuth } from "../auth/hooks"
 
 export const TurnProvider = ({ children }: { children: React.ReactNode }) => {
-  const { user } = useAuth();
+  const { user } = useAuth()
+  const [activeTurn, setActiveTurn] = useState<Turn | null>(null)
+  const [turns, setTurns] = useState<Turn[]>([])
 
-  const [activeTurn, setActiveTurn] = useState<Turn | null>(null);
-  const [turns, setTurns] = useState<Turn[]>([]);
-
-  /**
-   * ▶️ Activar turno (empleado)
-   */
-  const activateTurn = async () => {
-    if (!user) return;
-
+  const activateTurn = async (): Promise<void> => {
+    if (!user) return
     const { data, error } = await supabase
-      .from('turns')
-      .select('*')
-      .eq('employee_id', user.id)
-      .eq('status', 'pendiente')
-      .order('start_time')
+      .from("turns")
+      .select("*")
+      .eq("employee_id", user.id)
+      .eq("status", "pendiente")
+      .order("start_time")
       .limit(1)
-      .single();
+      .single()
 
     if (error || !data) {
-      alert('No hay turnos pendientes');
-      return;
+      alert("No hay turnos pendientes")
+      return
     }
 
-    await supabase
-      .from('turns')
-      .update({ status: 'activo' })
-      .eq('id', data.id);
+    await supabase.from("turns").update({ status: "activo" }).eq("id", data.id)
+    setActiveTurn({ ...data, status: "activo" })
+  }
 
-    setActiveTurn({ ...data, status: 'activo' });
-  };
+  const extendTurn = async (
+    pin: string,
+    minutes: number
+  ): Promise<{ success: boolean; new_end_time?: string; error?: string }> => {
+    if (!activeTurn) return { success: false, error: "No hay turno activo" }
 
-  /**
-   * 🔄 CARGA INICIAL DE TURNOS (FETCH REAL)
-   */
+    try {
+      const { data: sessionData } = await supabase.auth.getSession()
+      const access_token = sessionData?.session?.access_token
+      if (!access_token) return { success: false, error: "Usuario no autorizado" }
+
+      const res = await fetch(
+        "https://xgoiertpompdgxubhuwf.supabase.co/functions/v1/extend-turn-with-pin",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${access_token}`,
+          },
+          body: JSON.stringify({ pin, minutes }),
+        }
+      )
+
+      const data = await res.json()
+      if (!res.ok) return { success: false, error: data.error || "Error desconocido" }
+
+      setActiveTurn((prev) =>
+        prev ? { ...prev, end_time: data.new_end_time } : prev
+      )
+
+      return { success: true, new_end_time: data.new_end_time }
+    } catch (err) {
+      console.error(err)
+      return { success: false, error: "Error de conexión" }
+    }
+  }
+
   useEffect(() => {
-    if (!user) return;
-
+    if (!user) return
     const loadData = async () => {
-      // 🔹 Turno activo
       const { data: active } = await supabase
-        .from('turns')
-        .select('*')
-        .eq('employee_id', user.id)
-        .eq('status', 'activo')
-        .maybeSingle();
+        .from("turns")
+        .select("*")
+        .eq("employee_id", user.id)
+        .eq("status", "activo")
+        .maybeSingle()
 
-      setActiveTurn(active ?? null);
+      setActiveTurn(active ?? null)
 
-      // 🔹 Lista de turnos
-      const query = supabase.from('turns').select('*').order('start_time');
-
+      const query = supabase.from("turns").select("*").order("start_time")
       const { data: list } =
-        user.role === 'admin'
-          ? await query
-          : await query.eq('employee_id', user.id);
+        user.role === "admin" ? await query : await query.eq("employee_id", user.id)
+      setTurns(list ?? [])
+    }
+    loadData()
+  }, [user])
 
-      setTurns(list ?? []);
-    };
+  const contextValue: TurnContextProps = {
+    activeTurn,
+    turns,
+    activateTurn,
+    extendTurn,
+    reloadActiveTurn: async () => {},
+  }
 
-    loadData();
-  }, [user]);
-
-  return (
-    <TurnContext.Provider
-      value={{
-        activeTurn,
-        turns,
-        activateTurn,
-        reloadActiveTurn: async () => {}, // mantenido por compatibilidad
-      }}
-    >
-      {children}
-    </TurnContext.Provider>
-  );
-};
+  return <TurnContext.Provider value={contextValue}>{children}</TurnContext.Provider>
+}
